@@ -1,16 +1,11 @@
-require 'guard'
-require 'guard/guard'
-require 'guard/watcher'
-require 'guard/notifier'
+require 'guard/compat/plugin'
 
 module Guard
-  class Elixir < Guard
-    def initialize(watchers=[], options={})
+  class Elixir < Plugin
+    def initialize(options = {})
       super
-      @options = {
-        all_on_start: true,
-        dry_run: false,
-      }.update(options)
+
+      @options = { all_on_start: true, dry_run: false }.update(options)
     end
 
     def start
@@ -18,22 +13,21 @@ module Guard
     end
 
     def run_all
-      files = Dir.glob("**/*.*")
-      targets = Watcher.match_files(self, files)
+      files = Dir.glob('**/*.*')
+      targets = Guard::Compat.matching_files(self, files)
       run_on_change targets
     end
 
     # Called on file(s) modifications
     def run_on_change(paths)
       if @options[:dry_run]
-        paths.each { |path| UI.info "Dry run: #{path}" }
+        paths.each { |path| UI.info "Dry run: #{path}" } if paths
         return
       end
 
-      total    = 0
-      failures = 0
-      duration = 0
-      run_command("mix test #{paths.join(' ')}") do |line|
+      total = failures = duration = 0
+      #run_command("mix test #{paths.join(' ')}") do |line|
+      run_command("mix test") do |line|
         puts line
         if /Finished in ([0-9.]+) seconds/.match(line)
           duration = Regexp::last_match[1]
@@ -45,9 +39,9 @@ module Guard
 
       Notifier.notify(
         guard_message(total, failures, duration),
-        :title => "Elixir results",
-        :image => guard_image(failures),
-        :priority => guard_priority(failures)
+        title: 'Elixir results',
+        image: guard_image(failures),
+        priority: guard_priority(failures)
       )
     end
 
@@ -55,7 +49,7 @@ module Guard
 
     def run_command(cmd)
       UI.debug "+ #{cmd}"
-      IO.popen(cmd, :err => [:child, :out]).each do |line|
+      IO.popen(cmd, err: [:child, :out]).each do |line|
         if block_given?
           yield line
         else
@@ -63,28 +57,19 @@ module Guard
         end
       end
       Process.wait
-      $?.success?
+      $CHILD_STATUS.success?
     end
 
     def guard_image(failures)
-      if failures > 0
-        :failed
-      else
-        :success
-      end
+      failures > 0 ? :failed : :success
     end
 
     def guard_priority(failures)
-      if failures > 0
-        2
-      else
-        -2
-      end
+      failures > 0 ?  2 : -2
     end
 
     def guard_message(total, failures, duration)
       "#{total} tests, #{failures} failures\nin #{duration} seconds"
     end
-
   end
 end
