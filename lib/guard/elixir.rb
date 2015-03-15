@@ -20,6 +20,8 @@ module Guard
 
     # Called on file(s) modifications
     def run_on_change(paths)
+      get_deps if paths.include? 'mix.exs'
+
       if @options[:dry_run]
         paths.each { |path| UI.info "Dry run: #{path}" } if paths
         return
@@ -27,7 +29,7 @@ module Guard
 
       total = failures = duration = 0
       #run_command("mix test #{paths.join(' ')}") do |line|
-      run_command("mix test") do |line|
+      run_command('mix test') do |line|
         puts line
         if /Finished in ([0-9.]+) seconds/.match(line)
           duration = Regexp::last_match[1]
@@ -46,6 +48,16 @@ module Guard
     end
 
     private
+
+    def get_deps
+      if @options[:dry_run]
+        UI.info 'Dry run: deps.get, deps.compile'
+        return
+      end
+
+      run_command('mix deps.get')
+      run_command('mix deps.compile')
+    end
 
     def run_command(cmd)
       UI.debug "+ #{cmd}"

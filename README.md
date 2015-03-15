@@ -1,3 +1,10 @@
+# NOTE:
+This is a quick fix up of webcoyotes/guard-elixir to work with versions of 
+guard >- 2.8. I've performed a brutal change to lib/guard/elixir.rb to
+run ALL mix tests everytime since I need this - 
+it really should be configurable.
+
+Because of this (and the fact that guard-elixir hasn't been updated in two years) I've not submitted a pull request back.
 # Guard::Elixir
 [![Gem Version](https://badge.fury.io/rb/guard-elixir.png)](http://badge.fury.io/rb/guard-elixir)
 [![Build Status](https://travis-ci.org/webcoyote/guard-elixir.png?branch=master)](https://travis-ci.org/webcoyote/guard-elixir)
